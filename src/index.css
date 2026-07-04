@@ -1,0 +1,247 @@
+@import "tailwindcss";
+
+@theme {
+  --color-slate-50: var(--slate-50);
+  --color-slate-100: var(--slate-100);
+  --color-slate-150: var(--slate-150);
+  --color-slate-200: var(--slate-200);
+  --color-slate-300: var(--slate-300);
+  --color-slate-350: var(--slate-350);
+  --color-slate-400: var(--slate-400);
+  --color-slate-500: var(--slate-500);
+  --color-slate-600: var(--slate-600);
+  --color-slate-650: var(--slate-650);
+  --color-slate-700: var(--slate-700);
+  --color-slate-750: var(--slate-750);
+  --color-slate-800: var(--slate-800);
+  --color-slate-850: var(--slate-850);
+  --color-slate-900: var(--slate-900);
+  --color-slate-950: var(--slate-950);
+
+  --color-zinc-50: var(--zinc-50);
+  --color-zinc-100: var(--zinc-100);
+  --color-zinc-200: var(--zinc-200);
+  --color-zinc-300: var(--zinc-300);
+  --color-zinc-400: var(--zinc-400);
+  --color-zinc-450: var(--zinc-450);
+  --color-zinc-500: var(--zinc-500);
+  --color-zinc-550: var(--zinc-550);
+  --color-zinc-600: var(--zinc-600);
+  --color-zinc-650: var(--zinc-650);
+  --color-zinc-700: var(--zinc-700);
+  --color-zinc-805: var(--zinc-805);
+  --color-zinc-800: var(--zinc-800);
+  --color-zinc-850: var(--zinc-850);
+  --color-zinc-900: var(--zinc-900);
+  --color-zinc-950: var(--zinc-950);
+
+  --color-indigo-50: var(--indigo-50);
+  --color-green-50: var(--green-50);
+  --color-red-50: var(--red-50);
+  --color-amber-50: var(--amber-50);
+  --color-blue-50: var(--blue-50);
+  --color-purple-50: var(--purple-50);
+}
+
+:root {
+  /* Slate Dark Theme (Default) */
+  --bg-main: #0F172A;
+  --bg-card: #1E293B;
+  --bg-sidebar: #0F172A;
+  --bg-input: #0F172A;
+  --border-color: #334155;
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+
+  /* Semantic overlay opacity helpers */
+  --indigo-50: rgba(99, 102, 241, 0.15);
+  --green-50: rgba(34, 197, 94, 0.15);
+  --red-50: rgba(239, 68, 68, 0.15);
+  --amber-50: rgba(245, 158, 11, 0.15);
+  --blue-50: rgba(59, 130, 246, 0.15);
+  --purple-50: rgba(168, 85, 247, 0.15);
+
+  /* Slate range mappings */
+  --slate-50: var(--bg-main);
+  --slate-100: var(--bg-card);
+  --slate-150: #243048;
+  --slate-200: var(--border-color);
+  --slate-300: #475569;
+  --slate-350: #64748B;
+  --slate-400: var(--text-muted);
+  --slate-500: var(--text-secondary);
+  --slate-600: var(--text-secondary);
+  --slate-650: #CBD5E1;
+  --slate-700: #CBD5E1;
+  --slate-750: #E2E8F0;
+  --slate-800: #F1F5F9;
+  --slate-850: #1E293B;
+  --slate-900: #F8FAFC;
+  --slate-950: #FFFFFF;
+
+  /* Zinc fallback mappings in default Slate mode */
+  --zinc-50: #FFFFFF;
+  --zinc-100: #F8FAFC;
+  --zinc-200: #F1F5F9;
+  --zinc-300: #CBD5E1;
+  --zinc-400: #94A3B8;
+  --zinc-450: #94A3B8;
+  --zinc-500: var(--text-muted);
+  --zinc-550: var(--text-muted);
+  --zinc-600: var(--text-secondary);
+  --zinc-650: var(--border-color);
+  --zinc-700: var(--border-color);
+  --zinc-800: var(--border-color);
+  --zinc-805: var(--border-color);
+  --zinc-850: #1E293B;
+  --zinc-900: var(--bg-card);
+  --zinc-950: var(--bg-main);
+}
+
+.dark {
+  /* Charcoal / Zinc Dark Theme (Toggled) */
+  --bg-main: #121212;
+  --bg-card: #1E1E1E;
+  --bg-sidebar: #121212;
+  --bg-input: #121212;
+  --border-color: #2D2D2D;
+  --text-primary: #F5F5F5;
+  --text-secondary: #A3A3A3;
+  --text-muted: #737373;
+
+  /* Semantic overlay opacity helpers */
+  --indigo-50: rgba(99, 102, 241, 0.2);
+  --green-50: rgba(34, 197, 94, 0.2);
+  --red-50: rgba(239, 68, 68, 0.2);
+  --amber-50: rgba(245, 158, 11, 0.2);
+  --blue-50: rgba(59, 130, 246, 0.2);
+  --purple-50: rgba(168, 85, 247, 0.2);
+
+  /* Zinc range mappings */
+  --zinc-50: var(--text-primary);
+  --zinc-100: #E5E5E5;
+  --zinc-200: #D4D4D4;
+  --zinc-300: #A3A3A3;
+  --zinc-400: var(--text-secondary);
+  --zinc-450: var(--text-muted);
+  --zinc-500: var(--text-muted);
+  --zinc-550: var(--text-muted);
+  --zinc-600: #525252;
+  --zinc-650: #404040;
+  --zinc-700: var(--border-color);
+  --zinc-850: #1A1A1A;
+  --zinc-800: #262626;
+  --zinc-805: #262626;
+  --zinc-900: var(--bg-card);
+  --zinc-950: var(--bg-main);
+
+  /* Slate fallback mappings in dark mode */
+  --slate-50: var(--bg-main);
+  --slate-100: var(--bg-card);
+  --slate-150: #262626;
+  --slate-200: var(--border-color);
+  --slate-300: #404040;
+  --slate-350: #525252;
+  --slate-400: var(--text-muted);
+  --slate-500: var(--text-secondary);
+  --slate-600: var(--text-secondary);
+  --slate-650: #D4D4D4;
+  --slate-700: #E5E5E5;
+  --slate-750: #F5F5F5;
+  --slate-800: #FFFFFF;
+  --slate-850: #1A1A1A;
+  --slate-900: var(--text-primary);
+  --slate-950: #FFFFFF;
+}
+
+/* Ensure the body and html elements are dark */
+html, body {
+  background-color: var(--bg-main) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Map bg-white to our semantic card background */
+.bg-white {
+  background-color: var(--bg-card) !important;
+}
+
+/* Map hover:bg-white to our semantic hover background */
+.hover\:bg-white:hover {
+  background-color: var(--bg-card) !important;
+}
+
+/* Map bg-slate-50 and bg-zinc-950 explicitly */
+.bg-slate-50 {
+  background-color: var(--bg-main) !important;
+}
+.dark .bg-zinc-950 {
+  background-color: var(--bg-main) !important;
+}
+
+/* Form inputs & dropdown options customization for dark backgrounds */
+input, select, textarea {
+  background-color: var(--bg-main) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+input:focus, select:focus, textarea:focus {
+  border-color: #3b82f6 !important;
+  outline: none;
+}
+
+select option {
+  background-color: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Custom dark mode toggle rules to prevent invisibility */
+button[aria-label="Toggle visual theme"] {
+  background-color: var(--border-color) !important;
+}
+button[aria-label="Toggle visual theme"] > span {
+  background-color: #FFFFFF !important;
+  border-color: var(--border-color) !important;
+}
+.dark button[aria-label="Toggle visual theme"] {
+  background-color: var(--border-color) !important;
+}
+.dark button[aria-label="Toggle visual theme"] > span {
+  background-color: var(--bg-main) !important;
+  border-color: var(--border-color) !important;
+}
+
+/* Recharts grid lines & labels accessibility tweaks */
+.recharts-cartesian-grid line {
+  stroke: var(--border-color) !important;
+  opacity: 0.25;
+}
+.recharts-cartesian-axis-tick text {
+  fill: var(--text-secondary) !important;
+  font-size: 10px;
+}
+.recharts-legend-item-text {
+  color: var(--text-primary) !important;
+}
+.recharts-default-tooltip {
+  background-color: var(--bg-card) !important;
+  border-color: var(--border-color) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Custom Webkit scrollbars to fit modern dark theme */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-main);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}

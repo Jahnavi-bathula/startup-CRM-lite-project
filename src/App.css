@@ -1,0 +1,41 @@
+/* AeroCRM CSS Overrides & Custom Scrollbars */
+
+/* Hide horizontal scrollbar on body */
+body {
+  overflow: hidden;
+}
+
+/* Custom Webkit scrollbars to fit Stripe/Linear sleek design style */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-main);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Smooth page fade-in animation triggers */
+.page-view {
+  animation: pageFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes pageFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
