@@ -86,7 +86,7 @@ function RecentLeads({ leads }) {
                   {/* Company */}
                   <td className="p-4 text-slate-500 dark:text-zinc-400 font-medium">{lead.company}</td>
                   {/* Status badge */}
-                  <td className="p-4">{renderStatusBadge(lead.stage)}</td>
+                  <td className="p-4">{renderStatusBadge(lead.status || lead.stage)}</td>
                   {/* Date */}
                   <td className="p-4 text-right text-slate-400 dark:text-zinc-500 font-medium">{lead.date}</td>
                 </tr>

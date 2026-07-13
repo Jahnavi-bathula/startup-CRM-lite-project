@@ -37,7 +37,7 @@ export default function LeadForm({ initialData, onSubmit, onCancel }) {
         company: initialData.company || '',
         email: initialData.email || '',
         phone: initialData.phone || '',
-        stage: initialData.stage || 'New',
+        stage: initialData.status || initialData.stage || 'New',
         source: initialData.source || 'Website'
       });
     }

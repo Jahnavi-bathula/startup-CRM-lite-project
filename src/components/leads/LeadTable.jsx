@@ -70,7 +70,7 @@ function LeadTable({ leads, onEdit, onDelete }) {
 
                   {/* Status badge */}
                   <td className="p-4">
-                    <StatusBadge status={lead.stage} />
+                    <StatusBadge status={lead.status || lead.stage} />
                   </td>
 
                   {/* Email address link (Desktop only) */}

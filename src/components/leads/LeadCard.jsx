@@ -41,7 +41,7 @@ function LeadCard({ lead, onEdit, onDelete }) {
         
         {/* Render visual status badge */}
         <div className="shrink-0">
-          <StatusBadge status={lead.stage} />
+          <StatusBadge status={lead.status || lead.stage} />
         </div>
       </div>
 

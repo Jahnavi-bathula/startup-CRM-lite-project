@@ -89,6 +89,15 @@ const leadSchema = new mongoose.Schema(
     },
 
     /**
+     * The monetary value of the lead/deal.
+     * @type {Number}
+     */
+    value: {
+      type: Number,
+      default: 0
+    },
+
+    /**
      * Optional detailed notes or description about the lead.
      * Maximum length of 1000 characters.
      * @type {String}
@@ -116,15 +125,20 @@ const leadSchema = new mongoose.Schema(
   }
 );
 
-/**
- * Compound index on (owner, status) for fast filtered queries.
- */
+// Indexes
+// Compound index on owner and status for fast filtered dashboard/pipeline queries
 leadSchema.index({ owner: 1, status: 1 });
-
-/**
- * Single index on email for fast lookups.
- */
+// Single field index on email for fast lookups
 leadSchema.index({ email: 1 });
+// Compound index on owner and status and createdAt for filtering and sorting
+leadSchema.index({ owner: 1, status: 1, createdAt: -1 });
+// Compound index on owner and source and createdAt for filtering and sorting
+leadSchema.index({ owner: 1, source: 1, createdAt: -1 });
+// Compound index on owner and createdAt for pagination sort and stats aggregation
+leadSchema.index({ owner: 1, createdAt: -1 });
+// Compound indexes for quick autocomplete searches scoped to owner
+leadSchema.index({ owner: 1, name: 1 });
+leadSchema.index({ owner: 1, company: 1 });
 
 /**
  * Virtual field to compute the age of the lead in days.

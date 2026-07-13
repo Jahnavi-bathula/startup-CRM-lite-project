@@ -2,59 +2,65 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import dns from 'dns';
 
-// Ensure environment variables are loaded
+// Load environment variables from .env file
 dotenv.config();
 
 // Configure Node.js to use Google and Cloudflare DNS servers for name resolution.
-// This prevents querySrv ECONNREFUSED errors for MongoDB SRV records in environments with restrictive or misconfigured local DNS.
+// This prevents querySrv ECONNREFUSED errors for MongoDB SRV records in environments with restrictive/misconfigured DNS.
 try {
   dns.setServers(['8.8.8.8', '1.1.1.1']);
 } catch (dnsError) {
-  console.warn('Unable to set custom DNS servers:', dnsError.message);
+  console.warn('Unable to set custom DNS servers for name resolution:', dnsError.message);
 }
 
 /**
- * Establishes a connection to the MongoDB Atlas database using Mongoose.
- * Configured with the MONGODB_URI environment variable.
- * Logs success on a successful connection, otherwise logs the error and terminates the process.
+ * Connects to MongoDB Atlas using the URI configured in environment variables.
  * 
- * NOTE: Modern versions of Mongoose (v6+) enable useNewUrlParser and useUnifiedTopology by default 
- * and Mongoose v9+ throws an error if they are passed. We attempt to pass them as requested, 
- * but fall back to a standard connection if the library rejects them.
+ * - Configures mongoose with the specified options { useNewUrlParser: true, useUnifiedTopology: true }.
+ * - Handles potential connection issues and terminates the process with exit code 1.
+ * - Gracefully handles compatibility issues with modern Mongoose versions which throw on legacy options.
+ * 
+ * @returns {Promise<void>} Resolves when connection is successfully established.
  */
 export const connectDB = async () => {
   try {
     const mongoURI = process.env.MONGODB_URI;
     if (!mongoURI) {
-      throw new Error('MONGODB_URI environment variable is not defined.');
+      throw new Error('MONGODB_URI environment variable is missing.');
     }
 
-    let conn;
+    // Set the requested Mongoose options
     const options = {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     };
 
+    let conn;
     try {
-      // Attempt connection with the requested Mongoose options
+      // Connect to MongoDB Atlas with options
       conn = await mongoose.connect(mongoURI, options);
     } catch (optionError) {
-      // If modern Mongoose throws because these deprecated options are unsupported, retry without them
-      if (
+      // Modern versions of Mongoose (v7+) throw an error if legacy connection options are provided.
+      // If we catch that specific error, we fall back to connecting without these options.
+      const isLegacyOptionErr = 
         optionError.message.toLowerCase().includes('usenewurlparser') || 
-        optionError.message.toLowerCase().includes('useunifiedtopology')
-      ) {
-        console.warn('Mongoose options useNewUrlParser/useUnifiedTopology not supported in this version. Connecting without options...');
+        optionError.message.toLowerCase().includes('useunifiedtopology') ||
+        optionError.message.toLowerCase().includes('not supported');
+
+      if (isLegacyOptionErr) {
+        console.warn('Legacy options (useNewUrlParser, useUnifiedTopology) are not supported by this Mongoose version. Retrying connection without them...');
         conn = await mongoose.connect(mongoURI);
       } else {
+        // Rethrow other database connection errors
         throw optionError;
       }
     }
 
+    // On success: log connected host to console
     console.log(`MongoDB Atlas Connected: ${conn.connection.host}`);
   } catch (error) {
-    console.error(`Database connection failed: ${error.message}`);
-    // Exit application process with failure code 1
+    // On error: log error details and exit with failure code (1)
+    console.error(`Database connection failure: ${error.message}`);
     process.exit(1);
   }
 };

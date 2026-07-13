@@ -1,12 +1,14 @@
-import React, { lazy, Suspense } from 'react'; // Import React, lazy loading utility, and Suspense placeholder component
-import { Routes, Route } from 'react-router-dom'; // Import router components to map path routes to pages
+import React, { lazy, Suspense } from 'react';
+import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 // Lazy-load page view chunks dynamically so that Vite compiles separate JS bundles.
-// These chunks are only fetched from the server when the user accesses the respective route, reducing initial load size.
-const Dashboard = lazy(() => import('../pages/Dashboard')); // Dynamic import for root Dashboard page
-const Leads = lazy(() => import('../pages/Leads')); // Dynamic import for Leads directory page
-const Analytics = lazy(() => import('../pages/Analytics')); // Dynamic import for Analytics page
-const NotFound = lazy(() => import('../pages/NotFound')); // Dynamic import for fallback 404 page
+const Dashboard = lazy(() => import('../pages/Dashboard'));
+const Leads = lazy(() => import('../pages/Leads'));
+const Analytics = lazy(() => import('../pages/Analytics'));
+const Login = lazy(() => import('../pages/Login'));
+const Register = lazy(() => import('../pages/Register'));
+const NotFound = lazy(() => import('../pages/NotFound'));
 
 /**
  * RouteLoader fallback component.
@@ -20,25 +22,55 @@ const RouteLoader = () => (
 );
 
 /**
+ * ProtectedRoute Component
+ * Shields routes from unauthenticated access.
+ * - If session is recovering (isLoading === true), renders RouteLoader to prevent flashing redirects.
+ * - If no authentication token is present, redirects to the /login screen.
+ * - Otherwise, renders the child routes via React Router's <Outlet />.
+ */
+function ProtectedRoute() {
+  const { token, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <RouteLoader />;
+  }
+
+  if (!token) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <Outlet />;
+}
+
+/**
  * AppRoutes Component
- * Sets up the routing tree configuration using React Router v6.
+ * Sets up the routing tree configuration using React Router.
  * The entire Routes group is wrapped inside Suspense to support lazy loading animations.
  */
 export default function AppRoutes() {
   return (
     <Suspense fallback={<RouteLoader />}>
       <Routes>
-        {/* Path "/" renders the root Dashboard view */}
-        <Route path="/" element={<Dashboard />} />
         
-        {/* Path "/leads" renders the Lead Directory view */}
-        <Route path="/leads" element={<Leads />} />
+        {/* Public Authentication Routes */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
         
-        {/* Path "/analytics" renders the Analytics view */}
-        <Route path="/analytics" element={<Analytics />} />
+        {/* Protected Dashboard/App Routes */}
+        <Route element={<ProtectedRoute />}>
+          {/* Path "/" renders the root Dashboard view */}
+          <Route path="/" element={<Dashboard />} />
+          
+          {/* Path "/leads" renders the Lead Directory view */}
+          <Route path="/leads" element={<Leads />} />
+          
+          {/* Path "/analytics" renders the Analytics view */}
+          <Route path="/analytics" element={<Analytics />} />
+        </Route>
         
         {/* Catch-all path "*" acts as a fallback for any undefined routes, serving the 404 page */}
         <Route path="*" element={<NotFound />} />
+        
       </Routes>
     </Suspense>
   );

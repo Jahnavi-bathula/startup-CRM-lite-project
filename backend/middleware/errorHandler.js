@@ -1,16 +1,19 @@
 import { errorResponse } from '../utils/apiResponse.js';
 
 /**
- * Global Express Error Handler middleware.
- * Catches various database, authentication, and internal server errors,
- * formats them, and returns a consistent API response.
+ * Global Express Error Handling Middleware.
  * 
- * @param {Object} err - The error object.
+ * Intercepts all next(err) calls across routers and controllers, structures the response payload
+ * according to the environment (dev vs. prod), and maps specific database and auth issues to standard status codes.
+ * 
+ * @param {Object} err - Error object thrown in application code.
  * @param {Object} req - Express request object.
  * @param {Object} res - Express response object.
- * @param {Function} next - Express next middleware function.
+ * @param {Function} next - Next middleware trigger function.
+ * @returns {Object} Express response.
  */
 const errorHandler = (err, req, res, next) => {
+  // Default values
   let statusCode = err.statusCode || 500;
   let message = err.message || 'Server error';
   let errors = null;
@@ -20,6 +23,7 @@ const errorHandler = (err, req, res, next) => {
     statusCode = 400;
     message = 'Validation Error';
     errors = {};
+    // Parse each schema validation path error message
     Object.keys(err.errors).forEach((key) => {
       errors[key] = err.errors[key].message;
     });
@@ -32,9 +36,8 @@ const errorHandler = (err, req, res, next) => {
   // 3. MongoDB duplicate key (code 11000) -> 409 "Email already exists"
   else if (err.code === 11000) {
     statusCode = 409;
-    // Although code 11000 can be triggered by other fields, our primary unique index is Email
     message = 'Email already exists';
-    // Optionally extract the duplicate key details
+    // Capture the duplicate key/value if available for debugging/response
     if (err.keyValue) {
       errors = err.keyValue;
     }
@@ -43,23 +46,29 @@ const errorHandler = (err, req, res, next) => {
   else if (err.name === 'JsonWebTokenError') {
     statusCode = 401;
     message = 'Invalid token. Please authenticate again.';
-  } else if (err.name === 'TokenExpiredError') {
+  } 
+  else if (err.name === 'TokenExpiredError') {
     statusCode = 401;
     message = 'Token has expired. Please authenticate again.';
   }
-  // 5. Everything else -> 500 "Server error" (if not already set to custom status)
+  // 5. Everything else -> 500 "Server error"
   else {
+    // If it's a general runtime error without a custom status code, default to 500 and mask implementation details.
     if (statusCode === 500) {
       message = 'Server error';
     }
   }
 
-  // Log error details for development troubleshooting
+  // Log full error logs to server output during development for debugging ease
   if (process.env.NODE_ENV === 'development') {
-    console.error('Error caught in global handler:', err);
+    console.error('Error Intercepted by Global Handler:', {
+      name: err.name,
+      message: err.message,
+      stack: err.stack,
+    });
   }
 
-  // In development, include err.stack in the response
+  // In development: include err.stack in the response
   if (process.env.NODE_ENV === 'development') {
     return res.status(statusCode).json({
       success: false,
@@ -69,7 +78,7 @@ const errorHandler = (err, req, res, next) => {
     });
   }
 
-  // In production, never send stack traces
+  // In production: never send stack traces (delegate to errorResponse helper)
   return errorResponse(res, message, statusCode, errors);
 };
 

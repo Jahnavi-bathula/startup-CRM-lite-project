@@ -1,7 +1,9 @@
 import { memo } from 'react'; // Import memo hook
 import { NavLink } from 'react-router-dom'; // Import NavLink from react-router-dom to build navigation links with active state handling
-import { LayoutDashboard, Users, BarChart3, Search, X } from 'lucide-react'; // Import Lucide icons for visual indicators in the navigation
+import { LayoutDashboard, Users, BarChart3, Search, X, LogOut } from 'lucide-react'; // Import Lucide icons for visual indicators in the navigation
 import DarkModeToggle from './DarkModeToggle';
+import { useAuth } from '../../context/AuthContext';
+
 
 /**
  * Sidebar Navigation Component
@@ -9,6 +11,27 @@ import DarkModeToggle from './DarkModeToggle';
  * a bottom nav bar on mobile, and a sliding drawer when opened via mobile hamburger.
  */
 function Sidebar({ isOpen, onClose }) {
+  const { user, logout } = useAuth();
+
+  // Compute initials for avatar badge
+  const initials = user?.name
+    ? user.name
+        .split(' ')
+        .map((n) => n[0])
+        .join('')
+        .toUpperCase()
+        .substring(0, 2)
+    : 'U';
+
+  const handleAvatarClick = () => {
+    // If sidebar is collapsed (Tablet view: screen width >= 768px and < 1024px)
+    if (window.innerWidth >= 768 && window.innerWidth < 1024) {
+      if (window.confirm('Do you want to log out of your AeroCorp account?')) {
+        logout();
+      }
+    }
+  };
+
   // Navigation links definition array containing paths, labels, and rendering icons
   const navItems = [
     { 
@@ -104,14 +127,28 @@ function Sidebar({ isOpen, onClose }) {
         </div>
 
         {/* User profile footer element */}
-        <div className="border-t border-slate-100 dark:border-zinc-900 pt-4 flex items-center gap-3 justify-center lg:justify-start shrink-0">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs select-none shrink-0">
-            SJ
+        <div className="border-t border-slate-100 dark:border-zinc-900 pt-4 flex items-center justify-between shrink-0 min-w-0 w-full">
+          <div className="flex items-center gap-3 min-w-0">
+            <button
+              onClick={handleAvatarClick}
+              className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs select-none shrink-0 cursor-pointer focus:outline-none hover:opacity-90 active:scale-95 transition-all"
+              title={user?.name ? `${user.name} (Click to log out on tablet)` : 'User'}
+            >
+              {initials}
+            </button>
+            <div className="hidden lg:flex flex-col min-w-0">
+              <span className="text-xs font-semibold text-slate-800 dark:text-zinc-200 truncate leading-tight">{user?.name || 'User'}</span>
+              <span className="text-[10px] text-slate-400 dark:text-zinc-500 truncate">{user?.email || ''}</span>
+            </div>
           </div>
-          <div className="hidden lg:flex flex-col min-w-0">
-            <span className="text-xs font-semibold text-slate-800 dark:text-zinc-200 truncate leading-tight">Sarah Jenkins</span>
-            <span className="text-[10px] text-slate-400 dark:text-zinc-500 truncate">sarah@aerocorp.io</span>
-          </div>
+          <button
+            onClick={logout}
+            className="hidden lg:block p-1.5 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors cursor-pointer"
+            title="Log Out"
+            aria-label="Log Out"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </div>
       </aside>
 
@@ -191,14 +228,24 @@ function Sidebar({ isOpen, onClose }) {
         </div>
 
         {/* User Footer */}
-        <div className="border-t border-slate-100 dark:border-zinc-900 pt-4 flex items-center gap-3">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs">
-            SJ
+        <div className="border-t border-slate-100 dark:border-zinc-900 pt-4 flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center text-white font-bold text-xs select-none shrink-0">
+              {initials}
+            </div>
+            <div className="flex flex-col min-w-0">
+              <span className="text-xs font-semibold text-slate-800 dark:text-zinc-200 truncate leading-tight">{user?.name || 'User'}</span>
+              <span className="text-[10px] text-slate-400 dark:text-zinc-500 truncate">{user?.email || ''}</span>
+            </div>
           </div>
-          <div className="flex flex-col min-w-0">
-            <span className="text-xs font-semibold text-slate-800 dark:text-zinc-200 truncate leading-tight">Sarah Jenkins</span>
-            <span className="text-[10px] text-slate-400 dark:text-zinc-500 truncate">sarah@aerocorp.io</span>
-          </div>
+          <button
+            onClick={logout}
+            className="p-2 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/20 transition-colors cursor-pointer"
+            title="Log Out"
+            aria-label="Log Out"
+          >
+            <LogOut className="w-4.5 h-4.5" />
+          </button>
         </div>
       </aside>
 
