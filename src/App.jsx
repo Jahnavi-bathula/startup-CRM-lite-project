@@ -3,6 +3,9 @@ import { BrowserRouter, useLocation } from 'react-router-dom';
 import { ThemeProvider } from './context/ThemeContext';
 import { AuthProvider } from './context/AuthContext';
 import { LeadProvider } from './context/LeadContext';
+import { TaskProvider } from './context/TaskContext';
+import { MeetingProvider } from './context/MeetingContext';
+import { NotificationProvider } from './context/NotificationContext';
 import Sidebar from './components/common/Sidebar';
 import AppRoutes from './routes';
 import { Menu } from 'lucide-react';
@@ -73,7 +76,13 @@ function App() {
       <BrowserRouter>
         <AuthProvider>
           <LeadProvider>
-            <AppContent />
+            <TaskProvider>
+              <MeetingProvider>
+                <NotificationProvider>
+                  <AppContent />
+                </NotificationProvider>
+              </MeetingProvider>
+            </TaskProvider>
           </LeadProvider>
         </AuthProvider>
       </BrowserRouter>

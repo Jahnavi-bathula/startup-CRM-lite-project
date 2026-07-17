@@ -5,7 +5,9 @@ import { useAuth } from '../context/AuthContext';
 // Lazy-load page view chunks dynamically so that Vite compiles separate JS bundles.
 const Dashboard = lazy(() => import('../pages/Dashboard'));
 const Leads = lazy(() => import('../pages/Leads'));
+const Tasks = lazy(() => import('../pages/Tasks'));
 const Analytics = lazy(() => import('../pages/Analytics'));
+const Profile = lazy(() => import('../pages/Profile'));
 const Login = lazy(() => import('../pages/Login'));
 const Register = lazy(() => import('../pages/Register'));
 const NotFound = lazy(() => import('../pages/NotFound'));
@@ -64,8 +66,14 @@ export default function AppRoutes() {
           {/* Path "/leads" renders the Lead Directory view */}
           <Route path="/leads" element={<Leads />} />
           
+          {/* Path "/tasks" renders the Tasks Page */}
+          <Route path="/tasks" element={<Tasks />} />
+          
           {/* Path "/analytics" renders the Analytics view */}
           <Route path="/analytics" element={<Analytics />} />
+
+          {/* Path "/profile" renders the Profile Page */}
+          <Route path="/profile" element={<Profile />} />
         </Route>
         
         {/* Catch-all path "*" acts as a fallback for any undefined routes, serving the 404 page */}

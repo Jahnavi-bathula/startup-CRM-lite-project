@@ -13,6 +13,8 @@ import { connectDB } from './config/database.js';
 // Import router modules
 import authRoutes from './routes/authRoutes.js';
 import leadRoutes from './routes/leadRoutes.js';
+import taskRoutes from './routes/taskRoutes.js';
+import meetingRoutes from './routes/meetingRoutes.js';
 
 // Import global error handling middleware
 import errorHandler from './middleware/errorHandler.js';
@@ -110,6 +112,8 @@ app.get('/api/health', (req, res) => {
 // Authentication and Leads route mappings
 app.use('/api/auth', authRoutes);
 app.use('/api/leads', leadRoutes);
+app.use('/api/tasks', taskRoutes);
+app.use('/api/meetings', meetingRoutes);
 
 // The global error handler must be registered last, after all routing paths
 app.use(errorHandler);

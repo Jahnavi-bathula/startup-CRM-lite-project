@@ -115,7 +115,44 @@ const leadSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: [true, 'Lead owner is required']
-    }
+    },
+
+    /**
+     * AI-based Lead Score (1-100)
+     */
+    leadScore: {
+      type: Number,
+      default: 0
+    },
+
+    /**
+     * Priority category derived from the score
+     */
+    priority: {
+      type: String,
+      enum: ['High', 'Medium', 'Low'],
+      default: 'Medium'
+    },
+
+    /**
+     * Historical log of activities performed on this lead
+     */
+    activities: [
+      {
+        type: {
+          type: String,
+          enum: ['Created', 'Updated', 'Contacted', 'Meeting Scheduled', 'Proposal Sent', 'Won', 'Lost'],
+          required: true
+        },
+        note: {
+          type: String
+        },
+        timestamp: {
+          type: Date,
+          default: Date.now
+        }
+      }
+    ]
   },
   {
     timestamps: true,
@@ -124,6 +161,68 @@ const leadSchema = new mongoose.Schema(
     toObject: { virtuals: true }
   }
 );
+
+// Pre-save middleware to compute AI Lead Score, Priority and log activity timeline
+leadSchema.pre('save', function(next) {
+  // 1. Log creation activity
+  if (this.isNew) {
+    this.activities = [{
+      type: 'Created',
+      note: 'Lead records created in system.',
+      timestamp: new Date()
+    }];
+  }
+
+  // 2. Recalculate AI score and priority if relevant fields modified
+  if (this.isModified('value') || this.isModified('status') || this.isModified('source') || this.isModified('email') || this.isModified('phone') || this.isNew) {
+    let score = 20; // base score
+
+    // Status weighting
+    if (this.status === 'Won') score += 40;
+    else if (this.status === 'Proposal Sent') score += 30;
+    else if (this.status === 'Meeting Scheduled') score += 20;
+    else if (this.status === 'Contacted') score += 10;
+    else if (this.status === 'Lost') score = 5;
+
+    // Value weighting
+    const val = Number(this.value) || 0;
+    if (val >= 25000) score += 25;
+    else if (val >= 10000) score += 20;
+    else if (val >= 5000) score += 15;
+    else if (val >= 1000) score += 10;
+
+    // Source weighting
+    if (this.source === 'Referral') score += 15;
+    else if (this.source === 'LinkedIn') score += 10;
+    else if (this.source === 'Website') score += 5;
+
+    // Integrity checks (has email/phone)
+    if (this.email && !this.email.match(/@(gmail|yahoo|outlook|hotmail)\.com$/i)) score += 10;
+    if (this.phone) score += 5;
+
+    this.leadScore = Math.min(100, Math.max(1, score));
+
+    // Priority allocation
+    if (this.leadScore >= 75) {
+      this.priority = 'High';
+    } else if (this.leadScore >= 40) {
+      this.priority = 'Medium';
+    } else {
+      this.priority = 'Low';
+    }
+  }
+
+  // 3. Log status changes
+  if (!this.isNew && this.isModified('status')) {
+    this.activities.push({
+      type: this.status === 'New' ? 'Created' : this.status,
+      note: `Lead stage changed to ${this.status}.`,
+      timestamp: new Date()
+    });
+  }
+
+  next();
+});
 
 // Indexes
 // Compound index on owner and status for fast filtered dashboard/pipeline queries
@@ -138,6 +237,8 @@ leadSchema.index({ owner: 1, source: 1, createdAt: -1 });
 leadSchema.index({ owner: 1, createdAt: -1 });
 // Compound indexes for quick autocomplete searches scoped to owner
 leadSchema.index({ owner: 1, name: 1 });
+// Compound index on owner and priority for high priority queries
+leadSchema.index({ owner: 1, priority: 1, leadScore: -1 });
 leadSchema.index({ owner: 1, company: 1 });
 
 /**

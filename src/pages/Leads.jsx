@@ -1,40 +1,42 @@
-import React, { useState, useMemo, useCallback } from 'react'; // Import state, memo, and callback hooks
-import toast, { Toaster } from 'react-hot-toast'; // Import react-hot-toast for notification feedback
-import { LayoutGrid, Table as TableIcon, Plus } from 'lucide-react'; // Import Lucide icons
+import React, { useState, useMemo, useCallback } from 'react';
+import toast, { Toaster } from 'react-hot-toast';
+import { LayoutGrid, Table as TableIcon, Plus, Download } from 'lucide-react';
 
 // Import Context Hooks
 import { useLeads } from '../context/LeadContext';
 
 // Import child components
-import LeadForm from '../components/leads/LeadForm'; // Import custom CRUD form
-import LeadCard from '../components/leads/LeadCard'; // Import custom Card view component
-import LeadTable from '../components/leads/LeadTable'; // Import custom Table view component
+import LeadForm from '../components/leads/LeadForm';
+import LeadCard from '../components/leads/LeadCard';
+import LeadTable from '../components/leads/LeadTable';
+import LeadDetailsDrawer from '../components/leads/LeadDetailsDrawer';
 
-// Import newly created common filters & empty state components
-import SearchBar from '../components/common/SearchBar'; // Controlled debounced search input
-import FilterBar from '../components/common/FilterBar'; // Category stage filter buttons
-import EmptyState from '../components/common/EmptyState'; // Fallback visual state component
-import Modal from '../components/common/Modal'; // Reusable generic modal dialog
+// Import common filters & components
+import SearchBar from '../components/common/SearchBar';
+import FilterBar from '../components/common/FilterBar';
+import EmptyState from '../components/common/EmptyState';
+import Modal from '../components/common/Modal';
 
-/**
- * Leads Page Component
- * Serves as the primary CRUD panel for CRM lead directory records.
- * Integrates search/filters, card/table view toggling, modal overlays, and toast popups.
- */
+// Export Utils
+import { exportToCSV } from '../utils/exportUtils';
+
 export default function Leads() {
   const { leads, addLead, updateLead, deleteLead } = useLeads();
 
   // UI state toggles
-  const [viewMode, setViewMode] = useState('table'); // View configuration: 'table' or 'card'
-  const [isModalOpen, setIsModalOpen] = useState(false); // Add/Edit Modal trigger
-  const [selectedLead, setSelectedLead] = useState(null); // Active edit lead reference
+  const [viewMode, setViewMode] = useState('table');
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedLead, setSelectedLead] = useState(null);
 
-  // Search & Filter state triggers
-  const [searchQuery, setSearchQuery] = useState(''); // Controlled search query string
-  const [activeFilter, setActiveFilter] = useState('All'); // Selected stage tag filter
+  // Drawer states
+  const [detailLead, setDetailLead] = useState(null);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  // --- Action Callback Handlers (useCallback optimizations) ---
+  // Search & Filter states
+  const [searchQuery, setSearchQuery] = useState('');
+  const [activeFilter, setActiveFilter] = useState('All');
 
+  // --- Action Callback Handlers ---
   const handleOpenCreateModal = useCallback(() => {
     setSelectedLead(null);
     setIsModalOpen(true);
@@ -50,8 +52,18 @@ export default function Leads() {
     setSelectedLead(null);
   }, []);
 
+  const handleSelectLead = useCallback((lead) => {
+    setDetailLead(lead);
+    setIsDrawerOpen(true);
+  }, []);
+
+  const handleCloseDrawer = useCallback(() => {
+    setIsDrawerOpen(false);
+    setDetailLead(null);
+  }, []);
+
   const handleDeleteLead = useCallback((id) => {
-    const targetLead = leads.find((l) => l.id === id);
+    const targetLead = leads.find((l) => l.id === id || l._id === id);
     deleteLead(id);
     
     toast.error(`Deleted lead "${targetLead?.name || 'Lead'}"`, {
@@ -71,11 +83,13 @@ export default function Leads() {
   const handleFormSubmit = useCallback((formData) => {
     const mappedData = {
       ...formData,
-      status: formData.stage // Sync stage dropdown selection with status key
+      status: formData.stage
     };
 
+    const targetId = selectedLead ? (selectedLead.id || selectedLead._id) : null;
+
     if (selectedLead) {
-      updateLead(selectedLead.id, mappedData);
+      updateLead(targetId, mappedData);
       toast.success(`Successfully updated lead "${formData.name}"`, {
         style: {
           background: '#22C55E',
@@ -104,7 +118,7 @@ export default function Leads() {
     setActiveFilter('All');
   }, []);
 
-  // --- Memoized Search and Filter list matching (useMemo optimization) ---
+  // Filter Leads
   const filteredLeads = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
     return leads
@@ -120,25 +134,34 @@ export default function Leads() {
   return (
     <div className="flex-1 flex flex-col h-full bg-slate-50 dark:bg-zinc-950 overflow-hidden transition-colors duration-200">
       
-      {/* Toast Notification Container */}
+      {/* Toast Notification */}
       <Toaster position="top-right" reverseOrder={false} />
 
-      {/* Header bar controls */}
+      {/* Header controls */}
       <header className="p-6 md:p-8 flex items-center justify-between shrink-0">
         <div className="flex flex-col gap-0.5">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-zinc-55 tracking-tight">Leads Directory</h1>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-zinc-50 tracking-tight">Leads Directory</h1>
           <p className="text-xs text-slate-500 dark:text-zinc-500">Manage and track your active sales pipeline leads.</p>
         </div>
 
-        {/* Layout selectors & Add Button CTAs */}
+        {/* Action Button CTAs */}
         <div className="flex items-center gap-3">
-          {/* Layout switches (visible only on Tablet, hidden on mobile and desktop) */}
+          {/* CSV Export */}
+          <button
+            onClick={() => exportToCSV(leads, 'leads_directory')}
+            className="inline-flex items-center gap-2 px-3.5 py-2 border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 text-slate-700 dark:text-zinc-300 font-semibold text-xs rounded-lg hover:bg-slate-50 dark:hover:bg-zinc-800 transition-colors cursor-pointer min-h-[40px]"
+            title="Export leads list to CSV file"
+          >
+            <Download className="w-4 h-4" />
+            <span className="hidden sm:inline">Export CSV</span>
+          </button>
+
+          {/* Layout switches (visible only on Tablet) */}
           <div className="hidden md:flex lg:hidden items-center border border-slate-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 p-0.5 rounded-lg">
             <button
               onClick={() => setViewMode('table')}
               className={`p-2 rounded-md transition-colors cursor-pointer ${viewMode === 'table' ? 'bg-slate-100 dark:bg-zinc-800 text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-slate-700'}`}
               title="Table Layout View"
-              aria-label="Table Layout View"
             >
               <TableIcon className="w-4.5 h-4.5" />
             </button>
@@ -146,7 +169,6 @@ export default function Leads() {
               onClick={() => setViewMode('card')}
               className={`p-2 rounded-md transition-colors cursor-pointer ${viewMode === 'card' ? 'bg-slate-100 dark:bg-zinc-800 text-blue-600 dark:text-blue-400' : 'text-slate-500 hover:text-slate-700'}`}
               title="Card Grid Layout View"
-              aria-label="Card Grid Layout View"
             >
               <LayoutGrid className="w-4.5 h-4.5" />
             </button>
@@ -155,7 +177,7 @@ export default function Leads() {
           {/* Add New Lead button */}
           <button 
             onClick={handleOpenCreateModal}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-semibold text-xs rounded-lg shadow-md shadow-blue-500/10 transition-all cursor-pointer min-h-[44px]"
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 active:scale-[0.98] text-white font-semibold text-xs rounded-lg shadow-md shadow-blue-500/10 transition-all cursor-pointer min-h-[40px]"
           >
             <Plus className="w-4 h-4" />
             Add Lead
@@ -166,19 +188,15 @@ export default function Leads() {
       {/* Directory content section */}
       <section className="flex-1 overflow-hidden px-6 md:px-8 pb-6 md:pb-8 flex flex-col min-h-0">
         
-        {/* Search Input Box & Filter row panel */}
+        {/* Search & Filter row */}
         <div className="mb-5 flex flex-col gap-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            {/* Controlled debounced search input component */}
             <SearchBar value={searchQuery} onChange={setSearchQuery} />
-            
-            {/* Leads matching metrics display */}
-            <div className="text-[11px] font-semibold text-slate-400 dark:text-zinc-555 shrink-0">
+            <div className="text-[11px] font-semibold text-slate-400 dark:text-zinc-500 shrink-0">
               Showing {filteredLeads.length} of {leads.length} leads
             </div>
           </div>
 
-          {/* Controlled category stage selection FilterBar */}
           <FilterBar 
             activeFilter={activeFilter} 
             onFilterChange={setActiveFilter} 
@@ -186,58 +204,61 @@ export default function Leads() {
           />
         </div>
 
-        {/* Dynamic Layout Panel Render (Responsive layout options) */}
+        {/* Dynamic Layout Panel */}
         <div className="flex-1 overflow-y-auto">
           {filteredLeads.length === 0 ? (
-            /* Contextual Empty State component */
             <EmptyState 
               totalLeadsCount={leads.length} 
               onClearFilters={handleClearFilters} 
             />
           ) : (
             <>
-              {/* 1. Mobile Render: Card grid layout only (table is hidden) */}
+              {/* 1. Mobile Render: Card grid layout only */}
               <div className="block md:hidden">
                 <div className="grid grid-cols-1 gap-4">
                   {filteredLeads.map((lead) => (
                     <LeadCard 
-                      key={lead.id} 
+                      key={lead.id || lead._id} 
                       lead={lead} 
                       onEdit={handleOpenEditModal} 
-                      onDelete={handleDeleteLead} 
+                      onDelete={handleDeleteLead}
+                      onSelectLead={handleSelectLead}
                     />
                   ))}
                 </div>
               </div>
 
-              {/* 2. Tablet Render: Hybrid layout (switchable card/table) */}
+              {/* 2. Tablet Render: Hybrid layout */}
               <div className="hidden md:block lg:hidden">
                 {viewMode === 'table' ? (
                   <LeadTable 
                     leads={filteredLeads} 
                     onEdit={handleOpenEditModal} 
                     onDelete={handleDeleteLead} 
+                    onSelectLead={handleSelectLead}
                   />
                 ) : (
                   <div className="grid grid-cols-2 gap-6">
                     {filteredLeads.map((lead) => (
                       <LeadCard 
-                        key={lead.id} 
+                        key={lead.id || lead._id} 
                         lead={lead} 
                         onEdit={handleOpenEditModal} 
                         onDelete={handleDeleteLead} 
+                        onSelectLead={handleSelectLead}
                       />
                     ))}
                   </div>
                 )}
               </div>
 
-              {/* 3. Desktop Render: Full table layout (toggles hidden) */}
+              {/* 3. Desktop Render: Full table layout */}
               <div className="hidden lg:block">
                 <LeadTable 
                   leads={filteredLeads} 
                   onEdit={handleOpenEditModal} 
                   onDelete={handleDeleteLead} 
+                  onSelectLead={handleSelectLead}
                 />
               </div>
             </>
@@ -246,7 +267,7 @@ export default function Leads() {
 
       </section>
 
-      {/* --- ADD / EDIT OVERLAY DIALOG MODAL (Clean, reusable refactored architecture) --- */}
+      {/* --- ADD / EDIT OVERLAY DIALOG MODAL --- */}
       <Modal 
         isOpen={isModalOpen} 
         onClose={handleCloseModal} 
@@ -258,6 +279,14 @@ export default function Leads() {
           onCancel={handleCloseModal} 
         />
       </Modal>
+
+      {/* Sliding Lead Details Drawer Overlay */}
+      <LeadDetailsDrawer
+        lead={detailLead}
+        isOpen={isDrawerOpen}
+        onClose={handleCloseDrawer}
+        onUpdateLead={updateLead}
+      />
 
     </div>
   );
