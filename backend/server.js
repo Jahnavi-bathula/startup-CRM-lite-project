@@ -1,11 +1,32 @@
 import express from 'express';
-import dotenv from 'dotenv';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import mongoose from 'mongoose';
 import rateLimit from 'express-rate-limit';
 import mongoSanitize from 'express-mongo-sanitize';
+
+// Import module to create require for ES Modules compatibility
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+
+// Load environment variables from the .env file as the very first step
+try {
+  require('dotenv').config();
+  console.log('Safe Debug: Environment variables loaded successfully in server.js.');
+} catch (envError) {
+  console.error('Safe Debug: Failed to load environment variables via dotenv in server.js:', envError.message);
+}
+
+// Harmonize environment variable names (MONGODB_URI and MONGO_URI)
+if (process.env.MONGO_URI && !process.env.MONGODB_URI) {
+  process.env.MONGODB_URI = process.env.MONGO_URI;
+} else if (process.env.MONGODB_URI && !process.env.MONGO_URI) {
+  process.env.MONGO_URI = process.env.MONGODB_URI;
+}
+
+// Ensure PORT is set before validating to avoid failing startup checks on Railway
+process.env.PORT = process.env.PORT || 5000;
 
 // Import database connection configuration
 import { connectDB } from './config/database.js';
@@ -19,15 +40,16 @@ import meetingRoutes from './routes/meetingRoutes.js';
 // Import global error handling middleware
 import errorHandler from './middleware/errorHandler.js';
 
-// Load environment variables from the .env file as the very first step
-dotenv.config();
-
 /**
  * Validate that all required configuration environment variables are present.
  * Prevents server from starting with missing credentials or ports.
  */
 const checkRequiredEnvVars = () => {
-  const required = ['MONGODB_URI', 'JWT_SECRET', 'PORT'];
+  if (!process.env.MONGODB_URI) {
+    console.error('ERROR: MONGODB_URI environment variable is missing.');
+    process.exit(1);
+  }
+  const required = ['JWT_SECRET', 'PORT'];
   const missing = required.filter(key => !process.env[key]);
   if (missing.length > 0) {
     console.error(`FATAL: Startup configuration error. Missing required environment variable(s): ${missing.join(', ')}`);
