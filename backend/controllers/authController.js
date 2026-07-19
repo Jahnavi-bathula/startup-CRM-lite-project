@@ -71,11 +71,8 @@ export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    console.log('[Login] Attempt - Email:', email);
-
     // Find the user and explicitly fetch the password field (+password) for comparison
     const user = await User.findOne({ email }).select('+password');
-    console.log('[Login] User Found:', user ? `YES (id: ${user._id})` : 'NO');
 
     if (!user) {
       return errorResponse(res, 'User Not Found. Please check your email or register.', 401);
@@ -83,7 +80,6 @@ export const login = async (req, res, next) => {
 
     // Verify password match using bcrypt
     const isMatch = await user.comparePassword(password);
-    console.log('[Login] Password Match:', isMatch);
 
     if (!isMatch) {
       return errorResponse(res, 'Invalid Password. Please try again.', 401);
@@ -98,16 +94,12 @@ export const login = async (req, res, next) => {
     let token;
     try {
       token = generateToken(user._id);
-      console.log('[Login] Token Generated:', token ? 'YES' : 'NO');
     } catch (tokenError) {
-      console.error('[Login] Token Generation Failed:', tokenError.message);
       return errorResponse(res, 'Token Generation Failed. Please try again.', 500);
     }
 
     // Remove the password field from the user representation
     const userWithoutPassword = user.toJSON();
-
-    console.log('[Login] Success - User:', userWithoutPassword.email);
 
     return successResponse(
       res,
@@ -116,7 +108,6 @@ export const login = async (req, res, next) => {
       200
     );
   } catch (error) {
-    console.error('[Login] Server Error:', error.message);
     next(error);
   }
 };

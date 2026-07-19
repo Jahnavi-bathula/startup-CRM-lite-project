@@ -146,18 +146,30 @@ app.use(morgan(ENV === 'production' ? 'combined' : 'dev'));
  * header (JWT bearer token) on cross-origin requests.
  */
 const buildAllowedOrigins = () => {
-  const origins = ['https://startup-crm-lite-project-xi.vercel.app'];
+  // Start with explicitly known production origins
+  const origins = new Set([
+    'https://startup-crm-lite-project-xi.vercel.app',
+  ]);
 
+  // Add any extra origins from FRONTEND_URL (supports comma-separated list)
   if (process.env.FRONTEND_URL) {
-    process.env.FRONTEND_URL.split(',').forEach((o) => origins.push(o.trim()));
+    process.env.FRONTEND_URL
+      .split(',')
+      .map((o) => o.trim())
+      .filter(Boolean)
+      .forEach((o) => origins.add(o));
   }
 
-  // Allow localhost in non-production environments
+  // Always allow localhost in non-production (development / Railway preview)
   if (ENV !== 'production') {
-    origins.push('http://localhost:5173', 'http://localhost:5174');
+    origins.add('http://localhost:5173');
+    origins.add('http://localhost:5174');
+    origins.add('http://localhost:3000');
   }
 
-  return origins;
+  const list = [...origins];
+  console.log('✅  CORS allowed origins:', list);
+  return list;
 };
 
 const allowedOrigins = buildAllowedOrigins();
@@ -170,17 +182,19 @@ app.use(
      * @param {Function} callback - cors callback: callback(error, allow)
      */
     origin: (origin, callback) => {
-      // Allow requests with no Origin header (e.g. curl, Postman, server-to-server)
+      // Allow requests with no Origin header (curl, Postman, Railway health checks)
       if (!origin) return callback(null, true);
 
       if (allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        console.warn(`[CORS] Blocked request from disallowed origin: ${origin}`);
-        callback(new Error(`CORS policy: Origin '${origin}' is not allowed.`));
+        return callback(null, true);
       }
+
+      console.warn(`[CORS] Blocked request from origin: ${origin}`);
+      return callback(new Error(`CORS policy: Origin '${origin}' is not allowed.`));
     },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
   })
 );
 

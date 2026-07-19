@@ -32,15 +32,12 @@ export default function Login() {
   const handleFormSubmit = async (email, password) => {
     setLocalLoading(true);
     setGeneralError('');
-    console.log('[Login] Request - Email:', email);
     try {
-      const result = await login(email, password);
-      console.log('[Login] Success - Response:', result);
+      await login(email, password);
       navigate('/');
     } catch (err) {
       // Extract the specific error message from the backend response
-      const backendMessage = err.response?.data?.message;
-      console.log('[Login] Error Response:', err.response?.data);
+      const backendMessage = err.response?.data?.message || err.response?.data?.errors?.[0]?.message;
       // Map backend messages to user-friendly display text
       const displayMessage = backendMessage || 'Login failed. Please verify credentials.';
       setGeneralError(displayMessage);

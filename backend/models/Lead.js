@@ -163,7 +163,7 @@ const leadSchema = new mongoose.Schema(
 );
 
 // Pre-save middleware to compute AI Lead Score, Priority and log activity timeline
-leadSchema.pre('save', function(next) {
+leadSchema.pre('save', function() {
   // 1. Log creation activity
   if (this.isNew) {
     this.activities = [{
@@ -220,8 +220,6 @@ leadSchema.pre('save', function(next) {
       timestamp: new Date()
     });
   }
-
-  next();
 });
 
 // Indexes

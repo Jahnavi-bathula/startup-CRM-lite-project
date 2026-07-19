@@ -52,7 +52,8 @@ export default function Register() {
       // On success, redirect to dashboard
       navigate('/');
     } catch (err) {
-      setErrorMsg(err.response?.data?.message || 'Registration failed. Please try again.');
+      const backendMessage = err.response?.data?.message || err.response?.data?.errors?.[0]?.message;
+      setErrorMsg(backendMessage || 'Registration failed. Please try again.');
     }
   };
 
