@@ -66,13 +66,13 @@ export default function Register() {
       {/* Main Register Card Container */}
       <div className="w-full max-w-md bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl shadow-xl shadow-slate-100 dark:shadow-black/20 p-6 sm:p-8 transition-all duration-200">
         
-        {/* AeroCorp Branding Header */}
+        {/* AeroCRM Branding Header */}
         <header className="flex flex-col items-center text-center mb-8">
           <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-500/30 mb-4 select-none animate-bounce">
             A
           </div>
           <h1 className="text-2xl font-black text-slate-900 dark:text-zinc-50 tracking-tight">Create Account</h1>
-          <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1.5">Get started with AeroCorp CRM for free.</p>
+          <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1.5">Get started with AeroCRM for free.</p>
         </header>
 
         {/* Local validation error state display */}

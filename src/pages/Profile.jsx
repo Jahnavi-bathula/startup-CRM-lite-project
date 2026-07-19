@@ -80,7 +80,7 @@ export default function Profile() {
             </div>
             
             <h2 className="text-lg font-bold text-slate-900 dark:text-zinc-55">{user?.name || 'Administrator'}</h2>
-            <p className="text-xs text-slate-400 dark:text-zinc-500 mb-2">{user?.email || 'admin@aerocorp.com'}</p>
+            <p className="text-xs text-slate-400 dark:text-zinc-500 mb-2">{user?.email || 'admin@aerocrm.com'}</p>
             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-semibold bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/30">
               <Shield className="w-3.5 h-3.5" />
               Sales Director
@@ -97,7 +97,7 @@ export default function Profile() {
               </div>
               <div className="flex justify-between">
                 <span>Domain</span>
-                <span className="font-semibold text-slate-700 dark:text-zinc-300">AeroCorp Inc.</span>
+                <span className="font-semibold text-slate-700 dark:text-zinc-300">AeroCRM</span>
               </div>
               <div className="flex justify-between">
                 <span>Access Level</span>

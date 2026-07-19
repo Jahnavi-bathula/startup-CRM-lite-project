@@ -1,46 +1,104 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Mail, Lock, Loader2, ArrowRight } from 'lucide-react';
+import LoginForm from '../components/auth/LoginForm';
+import GoogleLoginButton from '../components/auth/GoogleLoginButton';
+import toast from 'react-hot-toast';
+import authService from '../services/authService';
 
 /**
  * Login Page Component
- * Renders a premium, accessible login form styled with glassmorphic cards,
- * responsive layouts, dynamic input focus highlights, and button loading shimmers.
+ * Refactored to coordinate modular subcomponents (LoginForm, GoogleLoginButton),
+ * handle email validation, remember me cookies, and redirect active session users.
  */
 export default function Login() {
-  const { login, isLoading } = useAuth();
+  const { login, loginWithGoogle, token, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
-  const [errorMsg, setErrorMsg] = useState('');
+  const [localLoading, setLocalLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  const [generalError, setGeneralError] = useState('');
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-    if (errorMsg) setErrorMsg('');
+  // 1. Redirect authenticated users to the dashboard page if a session token is active
+  useEffect(() => {
+    if (token) {
+      navigate('/', { replace: true });
+    }
+  }, [token, navigate]);
+
+  /**
+   * Submits email and password credentials for standard JWT authentication.
+   */
+  const handleFormSubmit = async (email, password) => {
+    setLocalLoading(true);
+    setGeneralError('');
+    console.log('[Login] Request - Email:', email);
+    try {
+      const result = await login(email, password);
+      console.log('[Login] Success - Response:', result);
+      navigate('/');
+    } catch (err) {
+      // Extract the specific error message from the backend response
+      const backendMessage = err.response?.data?.message;
+      console.log('[Login] Error Response:', err.response?.data);
+      // Map backend messages to user-friendly display text
+      const displayMessage = backendMessage || 'Login failed. Please verify credentials.';
+      setGeneralError(displayMessage);
+    } finally {
+      setLocalLoading(false);
+    }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (!formData.email.trim() || !formData.password) {
-      setErrorMsg('Please fill in all fields.');
+
+  /**
+   * Invoked upon successful Google OAuth authentication.
+   * Sends the ID token to the backend for verification and profile mapping.
+   */
+  const handleGoogleSuccess = async (idToken) => {
+    setGoogleLoading(true);
+    setGeneralError('');
+    try {
+      await loginWithGoogle(idToken);
+      navigate('/');
+    } catch (err) {
+      setGeneralError(err.response?.data?.message || 'Google Login failed. Please try again.');
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
+  /**
+   * Handles Google client token request failures.
+   */
+  const handleGoogleFailure = (err) => {
+    console.error('Google Sign-In error:', err);
+    toast.error('Google authentication failed. Please try again.');
+  };
+
+  /**
+   * Requests a password reset link for the provided email.
+   */
+  const handleForgotPassword = async (email) => {
+    if (!email) {
+      toast.error('Please enter your email address in the Email input field first.');
+      return;
+    }
+    const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailPattern.test(email)) {
+      toast.error('Please enter a valid email address.');
       return;
     }
 
+    const toastId = toast.loading('Sending password reset link...');
     try {
-      setErrorMsg('');
-      await login(formData.email.trim(), formData.password);
-      // On success, redirect to dashboard
-      navigate('/');
+      const response = await authService.forgotPassword(email);
+      toast.success(response.message || 'If that email exists, we sent a password reset link.', { id: toastId });
     } catch (err) {
-      // The toast notification handles showing server error messages
-      setErrorMsg(err.response?.data?.message || 'Login failed. Please verify credentials.');
+      toast.error(err.response?.data?.message || 'Failed to request reset. Please try again.', { id: toastId });
     }
   };
+
+  const isFormLoading = authLoading || localLoading || googleLoading;
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-slate-50 dark:bg-zinc-950 p-4 sm:p-6 transition-colors duration-200">
@@ -52,90 +110,45 @@ export default function Login() {
       {/* Main Login Card Container */}
       <div className="w-full max-w-md bg-white dark:bg-zinc-900 border border-slate-200/80 dark:border-zinc-800/80 rounded-2xl shadow-xl shadow-slate-100 dark:shadow-black/20 p-6 sm:p-8 transition-all duration-200">
         
-        {/* AeroCorp Branding Header */}
+        {/* AeroCRM Branding Header */}
         <header className="flex flex-col items-center text-center mb-8">
           <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-blue-500/30 mb-4 select-none animate-bounce">
             A
           </div>
-          <h1 className="text-2xl font-black text-slate-900 dark:text-zinc-50 tracking-tight">Welcome Back</h1>
-          <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1.5">Sign in to your AeroCorp CRM command hub.</p>
+          <h1 className="text-2xl font-black text-slate-900 dark:text-zinc-55 tracking-tight">Welcome Back</h1>
+          <p className="text-xs text-slate-500 dark:text-zinc-400 mt-1.5">Sign in to your AeroCRM command hub.</p>
         </header>
 
         {/* Local validation error state display */}
-        {errorMsg && (
+        {generalError && (
           <div className="mb-5 p-3 rounded-lg bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-900/40 text-red-650 dark:text-red-400 text-xs font-semibold leading-relaxed animate-shake">
-            {errorMsg}
+            {generalError}
           </div>
         )}
 
-        {/* Login Form */}
-        <form onSubmit={handleSubmit} className="space-y-5" noValidate>
-          
-          {/* Email Address Field */}
-          <div className="space-y-1.5">
-            <label htmlFor="login-email" className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
-              Email Address
-            </label>
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 dark:text-zinc-500 pointer-events-none">
-                <Mail className="w-4 h-4" />
-              </span>
-              <input
-                id="login-email"
-                name="email"
-                type="email"
-                required
-                value={formData.email}
-                onChange={handleChange}
-                placeholder="you@company.com"
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-sm text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-650 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-500 transition-all duration-200"
-              />
-            </div>
-          </div>
+        {/* Reusable Login Form */}
+        <LoginForm
+          onSubmit={handleFormSubmit}
+          isLoading={isFormLoading}
+          onForgotPassword={handleForgotPassword}
+        />
 
-          {/* Password Field */}
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label htmlFor="login-password" className="block text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">
-                Password
-              </label>
-            </div>
-            <div className="relative">
-              <span className="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400 dark:text-zinc-500 pointer-events-none">
-                <Lock className="w-4 h-4" />
-              </span>
-              <input
-                id="login-password"
-                name="password"
-                type="password"
-                required
-                value={formData.password}
-                onChange={handleChange}
-                placeholder="••••••••"
-                className="w-full pl-10 pr-4 py-3 bg-slate-50 dark:bg-zinc-950 border border-slate-200 dark:border-zinc-800 rounded-xl text-sm text-slate-900 dark:text-zinc-100 placeholder-slate-400 dark:placeholder-zinc-650 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-500 transition-all duration-200"
-              />
-            </div>
+        {/* Divider with "OR" */}
+        <div className="relative my-6 text-center select-none">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-slate-150 dark:border-zinc-800"></div>
           </div>
+          <span className="relative px-3 bg-white dark:bg-zinc-900 text-slate-400 dark:text-zinc-500 text-xxs uppercase font-black tracking-widest">
+            OR
+          </span>
+        </div>
 
-          {/* Submit Action CTA */}
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-600/70 text-white font-bold text-sm rounded-xl shadow-lg shadow-blue-500/20 hover:shadow-blue-500/35 transition-all duration-200 cursor-pointer disabled:cursor-not-allowed transform active:scale-[0.98]"
-          >
-            {isLoading ? (
-              <>
-                <Loader2 className="w-4.5 h-4.5 animate-spin" />
-                Signing in...
-              </>
-            ) : (
-              <>
-                Sign In
-                <ArrowRight className="w-4 h-4" />
-              </>
-            )}
-          </button>
-        </form>
+        {/* Reusable Google Sign-In Button */}
+        <GoogleLoginButton
+          onSuccess={handleGoogleSuccess}
+          onFailure={handleGoogleFailure}
+          isLoading={googleLoading}
+        />
 
         {/* Footer redirection link */}
         <footer className="mt-8 pt-6 border-t border-slate-100 dark:border-zinc-800/80 text-center">

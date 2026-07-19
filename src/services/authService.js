@@ -54,10 +54,22 @@ export const updateProfile = async (data) => {
   return response.data;
 };
 
+export const loginWithGoogle = async (idToken) => {
+  const response = await api.post('/api/auth/google', { idToken });
+  return response.data;
+};
+
+export const forgotPassword = async (email) => {
+  const response = await api.post('/api/auth/forgot-password', { email });
+  return response.data;
+};
+
 export default {
   register,
   login,
   logout,
   getProfile,
-  updateProfile
+  updateProfile,
+  loginWithGoogle,
+  forgotPassword
 };

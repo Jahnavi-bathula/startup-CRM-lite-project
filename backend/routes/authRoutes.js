@@ -5,7 +5,9 @@ import {
   login,
   getProfile,
   updateProfile,
-  logout
+  logout,
+  googleLogin,
+  forgotPassword
 } from '../controllers/authController.js';
 import { protect } from '../middleware/auth.js';
 import { validate } from '../middleware/validate.js';
@@ -95,5 +97,11 @@ router.put(
 
 // 5. User Logout Route (POST /api/auth/logout)
 router.post('/logout', protect, logout);
+
+// 6. Google Login Route (POST /api/auth/google)
+router.post('/google', googleLogin);
+
+// 7. Forgot Password Route (POST /api/auth/forgot-password)
+router.post('/forgot-password', forgotPassword);
 
 export default router;

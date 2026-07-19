@@ -50,7 +50,7 @@ function AppContent() {
             <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-blue-500/20">
               A
             </div>
-            <span className="font-semibold text-sm text-slate-900 dark:text-zinc-50 leading-tight">AeroCorp Inc.</span>
+            <span className="font-semibold text-sm text-slate-900 dark:text-zinc-55 leading-tight">AeroCRM</span>
           </div>
         </div>
       </header>

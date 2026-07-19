@@ -6,6 +6,10 @@ const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL
 });
 
+// Auth endpoint paths that should NOT trigger a redirect on 401
+// (because a 401 on login just means wrong credentials, not a session expiry)
+const AUTH_ENDPOINTS = ['/api/auth/login', '/api/auth/register', '/api/auth/google'];
+
 // Add a request interceptor that automatically adds the Authorization header
 api.interceptors.request.use(
   (config) => {
@@ -24,8 +28,14 @@ api.interceptors.response.use(
     return response;
   },
   (error) => {
-    // On 401 response: clears token from localStorage, redirects to /login
-    if (error.response && error.response.status === 401) {
+    const requestUrl = error.config?.url || '';
+    const isAuthEndpoint = AUTH_ENDPOINTS.some((path) => requestUrl.includes(path));
+
+    // On 401 for PROTECTED routes only: clear token and redirect to login.
+    // Do NOT redirect on 401 responses from auth endpoints (login/register/google) —
+    // those 401s mean "wrong credentials", not "session expired", so we let the
+    // component handle the error and display the message to the user.
+    if (error.response && error.response.status === 401 && !isAuthEndpoint) {
       localStorage.removeItem('crm-token');
       window.location.href = '/login';
     } 

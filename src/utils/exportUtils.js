@@ -71,7 +71,7 @@ export const exportToPDF = (leads, metrics = {}, title = 'CRM Summary Report') =
             <p>Generated on ${new Date().toLocaleString()} · CRM SaaS Analytics Engine</p>
           </div>
           <div style="text-align: right;">
-            <div style="font-weight: 800; color: #2563eb; font-size: 18px;">AeroCorp</div>
+            <div style="font-weight: 800; color: #2563eb; font-size: 18px;">AeroCRM</div>
             <span style="font-size: 9px; color: #64748b;">Enterprise Workspace</span>
           </div>
         </div>

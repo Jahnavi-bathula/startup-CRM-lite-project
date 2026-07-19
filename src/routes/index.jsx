@@ -1,6 +1,6 @@
 import React, { lazy, Suspense } from 'react';
-import { Routes, Route, Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { Routes, Route } from 'react-router-dom';
+import ProtectedRoute from '../components/auth/ProtectedRoute';
 
 // Lazy-load page view chunks dynamically so that Vite compiles separate JS bundles.
 const Dashboard = lazy(() => import('../pages/Dashboard'));
@@ -22,27 +22,6 @@ const RouteLoader = () => (
     <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
   </div>
 );
-
-/**
- * ProtectedRoute Component
- * Shields routes from unauthenticated access.
- * - If session is recovering (isLoading === true), renders RouteLoader to prevent flashing redirects.
- * - If no authentication token is present, redirects to the /login screen.
- * - Otherwise, renders the child routes via React Router's <Outlet />.
- */
-function ProtectedRoute() {
-  const { token, isLoading } = useAuth();
-
-  if (isLoading) {
-    return <RouteLoader />;
-  }
-
-  if (!token) {
-    return <Navigate to="/login" replace />;
-  }
-
-  return <Outlet />;
-}
 
 /**
  * AppRoutes Component

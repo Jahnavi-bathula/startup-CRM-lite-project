@@ -109,7 +109,7 @@ function Sidebar({ isOpen, onClose }) {
             A
           </div>
           <div className="hidden lg:flex flex-col min-w-0">
-            <span className="font-semibold text-sm text-slate-900 dark:text-zinc-50 leading-tight truncate">AeroCorp Inc.</span>
+            <span className="font-semibold text-sm text-slate-900 dark:text-zinc-55 leading-tight truncate">AeroCRM</span>
             <span className="text-[10px] text-slate-400 dark:text-zinc-500 truncate">Scale Subscription</span>
           </div>
         </div>
@@ -272,7 +272,7 @@ function Sidebar({ isOpen, onClose }) {
             <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-sm shadow-md shadow-blue-500/20">
               A
             </div>
-            <span className="font-semibold text-sm text-slate-900 dark:text-zinc-50 leading-tight">AeroCorp Inc.</span>
+            <span className="font-semibold text-sm text-slate-900 dark:text-zinc-50 leading-tight">AeroCRM</span>
           </div>
           
           <button 

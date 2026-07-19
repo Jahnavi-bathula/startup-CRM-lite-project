@@ -62,7 +62,6 @@ export const register = async (req, res, next) => {
  * PRODUCTION SECURITY NOTE: 
  * - In production, express-rate-limit middleware should be attached to this endpoint
  *   to prevent brute-force attacks on user credentials.
- * - Always return generic "Invalid credentials" error message on auth failure to prevent email harvesting.
  * 
  * @param {Object} req - Express request object.
  * @param {Object} res - Express response object.
@@ -72,28 +71,43 @@ export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
+    console.log('[Login] Attempt - Email:', email);
+
     // Find the user and explicitly fetch the password field (+password) for comparison
     const user = await User.findOne({ email }).select('+password');
+    console.log('[Login] User Found:', user ? `YES (id: ${user._id})` : 'NO');
+
     if (!user) {
-      return errorResponse(res, 'Invalid credentials', 401);
+      return errorResponse(res, 'User Not Found. Please check your email or register.', 401);
     }
 
     // Verify password match using bcrypt
     const isMatch = await user.comparePassword(password);
+    console.log('[Login] Password Match:', isMatch);
+
     if (!isMatch) {
-      return errorResponse(res, 'Invalid credentials', 401);
+      return errorResponse(res, 'Invalid Password. Please try again.', 401);
     }
 
     // Check if the user account is active
     if (!user.isActive) {
-      return errorResponse(res, 'Account is deactivated', 403);
+      return errorResponse(res, 'Account is deactivated. Please contact support.', 403);
     }
 
     // Generate JWT token
-    const token = generateToken(user._id);
+    let token;
+    try {
+      token = generateToken(user._id);
+      console.log('[Login] Token Generated:', token ? 'YES' : 'NO');
+    } catch (tokenError) {
+      console.error('[Login] Token Generation Failed:', tokenError.message);
+      return errorResponse(res, 'Token Generation Failed. Please try again.', 500);
+    }
 
     // Remove the password field from the user representation
     const userWithoutPassword = user.toJSON();
+
+    console.log('[Login] Success - User:', userWithoutPassword.email);
 
     return successResponse(
       res,
@@ -102,9 +116,11 @@ export const login = async (req, res, next) => {
       200
     );
   } catch (error) {
+    console.error('[Login] Server Error:', error.message);
     next(error);
   }
 };
+
 
 /**
  * Fetches the profile of the currently logged-in user.
@@ -203,6 +219,107 @@ export const updateProfile = async (req, res, next) => {
 export const logout = async (req, res, next) => {
   try {
     return successResponse(res, null, 'Logged out successfully', 200);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Verify Google ID token and log in / auto-register the user.
+ * 
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @param {Function} next - Express next middleware function.
+ */
+export const googleLogin = async (req, res, next) => {
+  try {
+    const { idToken } = req.body;
+    if (!idToken) {
+      return errorResponse(res, 'Google ID token is required', 400);
+    }
+
+    // Verify token by calling Google's API endpoint using global fetch
+    const response = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`);
+    if (!response.ok) {
+      return errorResponse(res, 'Invalid Google ID token', 401);
+    }
+
+    const payload = await response.json();
+    const { sub: googleId, email, name } = payload;
+
+    if (!email) {
+      return errorResponse(res, 'Google account has no email address associated', 400);
+    }
+
+    // 1. Check if user already exists by googleId
+    let user = await User.findOne({ googleId });
+
+    // 2. If not found, check if a user with same email exists
+    if (!user) {
+      user = await User.findOne({ email });
+      if (user) {
+        // Associate googleId with existing email/password account
+        user.googleId = googleId;
+        await user.save();
+      }
+    }
+
+    // 3. If still not found, create a new user (social registration)
+    if (!user) {
+      user = await User.create({
+        name: name || email.split('@')[0],
+        email: email,
+        googleId: googleId,
+        isActive: true,
+        role: 'user'
+      });
+    }
+
+    // 4. Generate JWT token
+    const token = generateToken(user._id);
+
+    return successResponse(
+      res,
+      { token, user: user.toJSON() },
+      'Logged in with Google successfully',
+      200
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * Request password reset link.
+ * Skeleton implementation.
+ * 
+ * @param {Object} req - Express request object.
+ * @param {Object} res - Express response object.
+ * @param {Function} next - Express next middleware function.
+ */
+export const forgotPassword = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return errorResponse(res, 'Email address is required', 400);
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      // For security reasons, don't reveal that the user does not exist.
+      // Simply return a success response saying the reset email was sent.
+      return successResponse(res, null, 'If that email exists, we sent a password reset link.', 200);
+    }
+
+    // In a real application, you would generate a reset token and email it.
+    console.log(`[Forgot Password Request] Reset link generated for user: ${email}`);
+
+    return successResponse(
+      res,
+      null,
+      'If that email exists, we sent a password reset link.',
+      200
+    );
   } catch (error) {
     next(error);
   }

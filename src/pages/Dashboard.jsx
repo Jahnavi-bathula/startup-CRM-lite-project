@@ -193,7 +193,7 @@ export default function Dashboard() {
       activeLeadsCount: stats.activeCount,
       wonCount: leads.filter(l => l.status === 'Won').length
     };
-    exportToPDF(leads, kpis, 'AeroCorp Sales Hub Report');
+    exportToPDF(leads, kpis, 'AeroCRM Sales Report');
   };
 
   return (
@@ -203,7 +203,7 @@ export default function Dashboard() {
       <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 border-b border-slate-200/50 dark:border-zinc-800/50 pb-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-zinc-50 tracking-tight flex items-center gap-2">
-            AeroCorp Hub <Sparkles className="w-5 h-5 text-blue-500 animate-pulse" />
+            AeroCRM <Sparkles className="w-5 h-5 text-blue-500 animate-pulse" />
           </h1>
           <p className="text-xs text-slate-500 dark:text-zinc-500">Premium MERN analytics and pipeline coordination engine.</p>
         </div>

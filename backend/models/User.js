@@ -50,8 +50,24 @@ const userSchema = new mongoose.Schema(
      */
     password: {
       type: String,
-      required: [true, 'Password is required'],
+      required: [
+        function() {
+          return !this.googleId;
+        },
+        'Password is required'
+      ],
       minlength: [6, 'Password must be at least 6 characters long']
+    },
+
+    /**
+     * The Google account ID (Google Subject ID).
+     * Mapped for users authenticated via Google OAuth.
+     * @type {String}
+     */
+    googleId: {
+      type: String,
+      unique: true,
+      sparse: true
     },
 
     /**
@@ -101,6 +117,7 @@ userSchema.pre('save', async function() {
  * @returns {Promise<Boolean>} True if matches, false otherwise.
  */
 userSchema.methods.comparePassword = async function(candidatePassword) {
+  if (!candidatePassword || !this.password) return false;
   return bcrypt.compare(candidatePassword, this.password);
 };
 

@@ -52,6 +52,7 @@ export function AuthProvider({ children }) {
     try {
       // login returns unwrapped response.data: { success, message, data: { token, user } }
       const responseData = await authService.login(email, password);
+      console.log('[AuthContext] Login API Response:', responseData);
       const { token: receivedToken, user: receivedUser } = responseData.data;
 
       localStorage.setItem('crm-token', receivedToken);
@@ -61,19 +62,15 @@ export function AuthProvider({ children }) {
       toast.success(responseData.message || 'Login successful!');
       return responseData.data;
     } catch (error) {
-      const errorMsg = error.response?.data?.message || 'Login failed. Please check your credentials.';
-      toast.error(errorMsg, {
-        style: {
-          background: '#EF4444',
-          color: '#FFFFFF',
-          fontWeight: '600'
-        }
-      });
+      // Re-throw so the calling component (Login.jsx) can display the error in its own UI.
+      // Login.jsx handles the error banner; we do NOT show a duplicate toast here.
+      console.error('[AuthContext] Login failed:', error.response?.data?.message || error.message);
       throw error;
     } finally {
       setIsLoading(false);
     }
   }, []);
+
 
   /**
    * Register a new user and login.
@@ -107,6 +104,36 @@ export function AuthProvider({ children }) {
   }, []);
 
   /**
+   * Login user with Google OAuth credentials.
+   */
+  const loginWithGoogle = useCallback(async (idToken) => {
+    setIsLoading(true);
+    try {
+      const responseData = await authService.loginWithGoogle(idToken);
+      const { token: receivedToken, user: receivedUser } = responseData.data;
+
+      localStorage.setItem('crm-token', receivedToken);
+      setToken(receivedToken);
+      setUser(receivedUser);
+
+      toast.success(responseData.message || 'Logged in with Google successfully!');
+      return responseData.data;
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || 'Google Login failed. Please try again.';
+      toast.error(errorMsg, {
+        style: {
+          background: '#EF4444',
+          color: '#FFFFFF',
+          fontWeight: '600'
+        }
+      });
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  /**
    * Log out active user session.
    * Clears state contexts and redirects the client to the login page.
    */
@@ -125,8 +152,9 @@ export function AuthProvider({ children }) {
     isLoading,
     login,
     register,
-    logout
-  }), [user, token, isLoading, login, register, logout]);
+    logout,
+    loginWithGoogle
+  }), [user, token, isLoading, login, register, logout, loginWithGoogle]);
 
   return (
     <AuthContext.Provider value={contextValue}>
