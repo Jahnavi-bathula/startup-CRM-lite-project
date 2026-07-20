@@ -133,8 +133,8 @@ app.use(morgan(ENV === 'production' ? 'combined' : 'dev'));
 
 /**
  * Allowed origins are composed of:
- *   - FRONTEND_URL from .env  (can be comma-separated for multi-domain deploys)
- *   - The Vercel production domain (hard-coded as a fallback)
+ *   - FRONTEND_URL from env  (primary — set this in Railway dashboard to your Vercel URL)
+ *   - The Vercel production domain (hard-coded as a secondary fallback)
  *   - localhost:5173 / localhost:5174 for local development (only in non-production)
  *
  * The dynamic `origin` callback allows fine-grained control that a plain
@@ -144,14 +144,19 @@ app.use(morgan(ENV === 'production' ? 'combined' : 'dev'));
  *
  * `credentials: true` is required for browsers to send the Authorization
  * header (JWT bearer token) on cross-origin requests.
+ *
+ * RAILWAY DEPLOYMENT NOTE:
+ *   Set FRONTEND_URL=https://<your-app>.vercel.app in Railway dashboard.
+ *   This variable is read here at startup — no code change required.
  */
 const buildAllowedOrigins = () => {
-  // Start with explicitly known production origins
+  // Hard-coded fallback — covers the primary Vercel deployment
   const origins = new Set([
     'https://startup-crm-lite-project-xi.vercel.app',
   ]);
 
-  // Add any extra origins from FRONTEND_URL (supports comma-separated list)
+  // Primary: add origins from FRONTEND_URL env var (supports comma-separated list)
+  // In Railway dashboard set: FRONTEND_URL=https://your-app.vercel.app
   if (process.env.FRONTEND_URL) {
     process.env.FRONTEND_URL
       .split(',')
@@ -160,7 +165,7 @@ const buildAllowedOrigins = () => {
       .forEach((o) => origins.add(o));
   }
 
-  // Always allow localhost in non-production (development / Railway preview)
+  // Always allow localhost in non-production (local dev)
   if (ENV !== 'production') {
     origins.add('http://localhost:5173');
     origins.add('http://localhost:5174');
@@ -168,7 +173,8 @@ const buildAllowedOrigins = () => {
   }
 
   const list = [...origins];
-  console.log('✅  CORS allowed origins:', list);
+  console.log('✅  CORS allowed origins:', JSON.stringify(list));
+  console.log(`✅  Current environment: ${ENV}`);
   return list;
 };
 
@@ -295,18 +301,36 @@ app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 // ---------------------------------------------------------------------------
 
 /**
- * Health check endpoint — used by load balancers, uptime monitors, and
- * Kubernetes liveness / readiness probes to verify the server is alive.
+ * Root route — returns a friendly API descriptor.
+ * Prevents Railway/monitors from treating GET / as an error.
+ * Does NOT require authentication and is NOT rate-limited.
+ */
+app.get('/', (_req, res) => {
+  res.status(200).json({
+    success:     true,
+    message:     'Startup CRM Lite API is running.',
+    version:     '1.0.0',
+    environment: ENV,
+    health:      '/api/health',
+    docs:        'See /api/health for server status.',
+  });
+});
+
+/**
+ * Health check endpoint — used by Railway, load balancers, and uptime monitors
+ * to verify the server is alive and ready to serve traffic.
  * Does NOT require authentication and is NOT rate-limited.
  *
- * Response shape:
- * { "status": "OK", "timestamp": "...", "environment": "production" }
+ * Response shape (matches deployment spec):
+ * { "success": true, "message": "Backend is running successfully.", "timestamp": "...", "environment": "production" }
  */
 app.get('/api/health', (_req, res) => {
   res.status(200).json({
-    status:      'OK',
-    timestamp:   new Date(),
+    success:     true,
+    message:     'Backend is running successfully.',
+    timestamp:   new Date().toISOString(),
     environment: ENV,
+    uptime:      `${Math.floor(process.uptime())}s`,
   });
 });
 
